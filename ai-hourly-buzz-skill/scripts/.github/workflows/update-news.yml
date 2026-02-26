@@ -1,0 +1,60 @@
+name: Hourly AI News Update
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 * * * *"  # 每小时整点运行
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Prepare OPML (optional)
+        env:
+          FOLLOW_OPML_B64: ${{ secrets.FOLLOW_OPML_B64 }}
+        run: |
+          mkdir -p feeds
+          if [ -n "$FOLLOW_OPML_B64" ]; then
+            echo "$FOLLOW_OPML_B64" | base64 --decode > feeds/follow.opml
+            echo "Loaded feeds/follow.opml from secret"
+          else
+            echo "No OPML secret, RSS is optional"
+          fi
+
+      - name: Collect & Push
+        env:
+          WECOM_WEBHOOK_URL: ${{ secrets.WECOM_WEBHOOK_URL }}
+        run: |
+          ARGS="--output-dir data --window-hours 24 --top-n 20"
+          if [ -f feeds/follow.opml ]; then
+            ARGS="$ARGS --rss-opml feeds/follow.opml"
+          fi
+          python scripts/main.py $ARGS
+
+      - name: Commit and push
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/*.json
+          git commit -m "chore: hourly ai news update"
+          git push
