@@ -17,22 +17,37 @@ ai-daily-report    ai-deep-column
 
 ## 目录结构
 
-本仓库包含两套部署方案：
+本仓库包含三套部署方案：
 
 | 文件夹后缀 | 说明 |
 |-----------|------|
 | `-skill`  | CodeBuddy Skill 格式，原始版本 |
-| `-github` | GitHub Actions 部署方案，推荐使用 |
+| `-github` | GitHub Actions 部署方案 |
+| `-server` | 自有服务器部署方案（cron + 飞书多维表格）|
 
 ```
 ai-news-skills-collection/
-├── ai-hourly-buzz-github/    # 每小时采集 → GitHub Actions + Pages
-├── ai-daily-report-github/   # 每日日报 → GitHub Actions
-├── ai-deep-column-github/    # 深度专栏 → 手动触发
+├── ai-hourly-buzz-github/    # GitHub Actions + Pages
+├── ai-daily-report-github/   # GitHub Actions
+├── ai-deep-column-github/    # 手动触发
+├── ai-hourly-buzz-server/    # cron + 飞书多维表格
+├── ai-daily-report-server/   # cron
+├── ai-deep-column-server/    # 手动触发
 ├── ai-hourly-buzz-skill/     # 原始 Skill 版本
 ├── ai-daily-report-skill/    # 原始 Skill 版本
 └── ai-deep-column-skill/     # 原始 Skill 版本
 ```
+
+## 两套方案对比
+
+| | `-github` 方案 | `-server` 方案 |
+|--|--------------|--------------|
+| 调度 | GitHub Actions | 服务器 cron |
+| 数据展示 | GitHub Pages 网页 | 飞书多维表格 |
+| archive.json | 每次冷启动重建 | 本地磁盘持久 |
+| 数据共享 | checkout 仓库 | 读本地文件 |
+| Actions 额度 | 消耗（约 1200 分钟/月）| 不消耗 |
+| 适用场景 | 无服务器、轻量部署 | 有服务器、稳定运行 |
 
 ## 快速开始（GitHub 方案）
 

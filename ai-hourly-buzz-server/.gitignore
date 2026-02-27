@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+feeds/follow.opml
+.env
+
+# 服务器本地运行时产生的数据文件，不需要提交
+data/archive.json
+data/source-status.json
+data/feishu-written-ids.json
+logs/
