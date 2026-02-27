@@ -1,190 +1,98 @@
 # AI News Skills Collection
 
-A collection of three interconnected CodeBuddy skills for automated AI news aggregation, daily report generation, and deep analysis column writing.
+三个相互关联的 AI 资讯自动化项目：每小时采集、每日日报、深度专栏，共同构成一套完整的 AI 资讯处理流水线。
 
-## 🎯 Overview
-
-This repository contains three skills that work together as a complete AI news processing pipeline:
+## 项目关系
 
 ```
-┌─────────────────────┐
-│  ai-hourly-buzz     │  ← Collects AI news from 10+ sources hourly
-│  (Data Collection)  │
-└─────────┬───────────┘
-          │
-          ▼  shared data (archive.json, latest-24h.json)
-          │
-    ┌─────┴─────┐
-    ▼           ▼
-┌───────────┐ ┌───────────────┐
-│ ai-daily  │ │ ai-deep       │
-│ -report   │ │ -column       │
-│           │ │               │
-│ Daily     │ │ Hot topic     │
-│ digest    │ │ deep analysis │
-└───────────┘ └───────────────┘
+ai-hourly-buzz（每小时采集）
+       │
+       │  latest-24h.json
+       ▼
+ ┌─────┴──────┐
+ ▼            ▼
+ai-daily-report    ai-deep-column
+（每日日报）        （深度专栏）
 ```
 
-## 📦 Skills Included
+## 目录结构
 
-### 1. ai-hourly-buzz-skill
-**Multi-source AI news collection engine**
+本仓库包含两套部署方案：
 
-- Scrapes 10+ web sources (Hacker News, GitHub Trending, Product Hunt, 36Kr, etc.)
-- Parses OPML RSS feeds for additional sources
-- Filters content by AI/tech relevance
-- Translates English titles to Chinese
-- Outputs structured JSON data
-- Optional Enterprise WeChat push notifications
-
-### 2. ai-daily-report-skill
-**Automated AI daily digest generator**
-
-- Reads news from ai-hourly-buzz shared data
-- Filters and deduplicates using keyword scoring
-- Uses DeepSeek API for classification, summarization, and translation
-- Generates WeChat-compatible HTML and Markdown reports
-- Publishes to WeChat Official Account draft box
-
-### 3. ai-deep-column-skill
-**Hot topic deep analysis column generator**
-
-- Clusters news into hot topics using title similarity and entity overlap
-- Semi-automatic workflow with candidate topic discovery
-- Generates 800-1500 word in-depth analysis articles via DeepSeek
-- Outputs WeChat-compatible HTML for publishing
-
-## 🚀 Quick Start
-
-### Installation
-
-Each skill has its own setup script:
-
-```bash
-# Install ai-hourly-buzz (data collection layer)
-bash ai-hourly-buzz-skill/scripts/setup.sh /path/to/install
-
-# Install ai-daily-report (depends on ai-hourly-buzz data)
-bash ai-daily-report-skill/scripts/setup.sh /path/to/install
-
-# Install ai-deep-column (depends on ai-hourly-buzz data)
-bash ai-deep-column-skill/scripts/setup.sh /path/to/install
-```
-
-### Configuration
-
-All skills use environment variables for sensitive configuration. Create a `.env` file in each project directory:
-
-```bash
-# Common - DeepSeek API (required for ai-daily-report and ai-deep-column)
-DEEPSEEK_API_KEY=your-api-key-here
-DEEPSEEK_BASE_URL=https://api.deepseek.com
-DEEPSEEK_MODEL=deepseek-chat
-
-# WeChat Official Account (optional)
-WECHAT_APP_ID=your-app-id
-WECHAT_APP_SECRET=your-app-secret
-
-# Enterprise WeChat Bot (optional)
-WECOM_WEBHOOK_URL=your-webhook-url
-
-# Shared data directory
-SHARED_DATA_DIR=/path/to/ai-hourly-buzz/data
-```
-
-### Usage
-
-```bash
-# 1. Run hourly news collection
-cd ai-hourly-buzz
-python scripts/main.py --output-dir data --no-push
-
-# 2. Generate daily report
-cd ai-daily-report
-python scripts/main.py --no-publish
-
-# 3. Discover hot topics and generate column
-cd ai-deep-column
-python scripts/main.py discover
-python scripts/main.py generate 1  # Select topic #1
-```
-
-## 📊 Data Flow
-
-1. **ai-hourly-buzz** collects and stores news in `data/archive.json` and `data/latest-24h.json`
-2. **ai-daily-report** reads from shared data, processes with AI, generates daily digest
-3. **ai-deep-column** reads from shared data, clusters hot topics, generates deep analysis
-
-## 🔧 GitHub Actions
-
-Each skill includes workflow templates for automated scheduling:
-
-- `ai-hourly-buzz`: Runs hourly
-- `ai-daily-report`: Runs daily at 7:00 AM Beijing time
-- `ai-deep-column`: Manual trigger or scheduled
-
-### Required Secrets
-
-| Secret | Used By | Description |
-|--------|---------|-------------|
-| `DEEPSEEK_API_KEY` | daily-report, deep-column | DeepSeek API key |
-| `WECHAT_APP_ID` | daily-report, deep-column | WeChat Official Account App ID |
-| `WECHAT_APP_SECRET` | daily-report, deep-column | WeChat Official Account App Secret |
-| `WECOM_WEBHOOK_URL` | hourly-buzz, deep-column | Enterprise WeChat webhook URL |
-| `FOLLOW_OPML_B64` | hourly-buzz | Base64-encoded OPML for RSS feeds |
-| `GH_PAT` | daily-report | GitHub PAT for cross-repo checkout |
-
-## 📁 Project Structure
+| 文件夹后缀 | 说明 |
+|-----------|------|
+| `-skill`  | CodeBuddy Skill 格式，原始版本 |
+| `-github` | GitHub Actions 部署方案，推荐使用 |
 
 ```
 ai-news-skills-collection/
-├── README.md
-├── ai-hourly-buzz-skill/
-│   ├── SKILL.md
-│   ├── scripts/
-│   │   ├── setup.sh
-│   │   ├── requirements.txt
-│   │   ├── feeds/
-│   │   │   └── follow.example.opml
-│   │   └── scripts/
-│   │       ├── main.py
-│   │       ├── collector.py
-│   │       └── wecom_bot.py
-│   └── assets/
-├── ai-daily-report-skill/
-│   ├── SKILL.md
-│   ├── scripts/
-│   │   ├── setup.sh
-│   │   ├── requirements.txt
-│   │   └── scripts/
-│   │       ├── main.py
-│   │       ├── config/
-│   │       ├── ai_service/
-│   │       ├── crawler/
-│   │       ├── processor/
-│   │       └── publisher/
-│   └── assets/
-└── ai-deep-column-skill/
-    ├── SKILL.md
-    ├── scripts/
-    │   ├── setup.sh
-    │   ├── requirements.txt
-    │   └── scripts/
-    │       ├── main.py
-    │       ├── config/
-    │       ├── topic_selector.py
-    │       ├── material_collector.py
-    │       ├── article_writer.py
-    │       ├── html_generator.py
-    │       ├── wechat_publisher.py
-    │       └── wecom_notify.py
-    └── assets/
+├── ai-hourly-buzz-github/    # 每小时采集 → GitHub Actions + Pages
+├── ai-daily-report-github/   # 每日日报 → GitHub Actions
+├── ai-deep-column-github/    # 深度专栏 → 手动触发
+├── ai-hourly-buzz-skill/     # 原始 Skill 版本
+├── ai-daily-report-skill/    # 原始 Skill 版本
+└── ai-deep-column-skill/     # 原始 Skill 版本
 ```
 
-## 📄 License
+## 快速开始（GitHub 方案）
 
-MIT License
+### 1. 配置 Secrets
 
-## 🤝 Contributing
+在仓库 Settings → Secrets and variables → Actions 中添加：
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+| Secret | 用途 |
+|--------|------|
+| `DEEPSEEK_API_KEY` | DeepSeek API 密钥（日报、专栏使用）|
+| `WECHAT_APP_ID` | 微信公众号 AppID |
+| `WECHAT_APP_SECRET` | 微信公众号 AppSecret |
+| `WECOM_WEBHOOK_URL` | 企业微信群机器人 Webhook |
+| `FOLLOW_OPML_B64` | OPML 订阅文件 Base64（可选）|
+| `GH_PAT` | 用于日报跨仓库读取数据的 Personal Access Token |
+
+### 2. 启用 GitHub Actions
+
+三个项目的 workflow 文件位于各自 `-github` 文件夹的 `.github/workflows/` 下：
+
+- `ai-hourly-buzz-github`：每小时整点自动运行，结果写入 `data/latest-24h.json`
+- `ai-daily-report-github`：每天北京时间 7:00 自动运行
+- `ai-deep-column-github`：手动触发
+
+### 3. 本地运行
+
+```bash
+# 采集（不推送企微）
+cd ai-hourly-buzz-github
+pip install -r requirements.txt
+python scripts/main.py --output-dir data --no-push
+
+# 生成日报（不发布微信）
+cd ai-daily-report-github
+pip install -r requirements.txt
+cd scripts && python main.py --no-publish
+
+# 生成专栏
+cd ai-deep-column-github
+pip install -r requirements.txt
+cd scripts && python main.py
+```
+
+## 关键设计说明
+
+### Token 优化
+- `ai-hourly-buzz` 标题翻译使用 Google Translate 免费接口，零 AI 消耗
+- `ai-daily-report` 标题翻译同样优先免费接口，DeepSeek 仅作降级备用
+- 所有 AI prompt 已精简，减少约 30% input token
+
+### 仓库大小控制
+- `archive.json`（全量归档，每小时变动）**不提交到 Git**，避免历史无限膨胀
+- 下游项目只依赖 `latest-24h.json`，功能不受影响
+- `title-zh-cache.json`（翻译缓存）正常提交，避免重复翻译
+
+### GitHub Actions 额度（免费账号 2000 分钟/月）
+- `ai-hourly-buzz`：约 720 次/月 × 1-2 分钟 ≈ 1000 分钟
+- `ai-daily-report`：约 30 次/月 × 3-5 分钟 ≈ 120 分钟
+- 合计约 1200 分钟，在免费额度内
+
+## License
+
+MIT

@@ -1,0 +1,83 @@
+name: AI Daily Report
+
+on:
+  schedule:
+    # 每天北京时间 7:00 运行 (UTC 23:00 前一天)
+    - cron: '0 23 * * *'
+  workflow_dispatch:
+    inputs:
+      publish_to_wechat:
+        description: '是否发布到微信公众号'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout ai-daily-report
+        uses: actions/checkout@v4
+        with:
+          path: ai-daily-report
+
+      - name: Checkout ai-hourly-buzz (shared data)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/ai-hourly-buzz
+          path: ai-hourly-buzz
+          token: ${{ secrets.GH_PAT }}
+        continue-on-error: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: ai-daily-report/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          cd ai-daily-report
+          pip install -r requirements.txt
+
+      - name: Generate daily report
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DEEPSEEK_BASE_URL: ${{ secrets.DEEPSEEK_BASE_URL || 'https://api.deepseek.com' }}
+          WECHAT_APP_ID: ${{ secrets.WECHAT_APP_ID }}
+          WECHAT_APP_SECRET: ${{ secrets.WECHAT_APP_SECRET }}
+          SHARED_DATA_DIR: ${{ github.workspace }}/ai-hourly-buzz/data
+          LOG_LEVEL: INFO
+        run: |
+          cd ai-daily-report/scripts
+          PUBLISH_FLAG=""
+          if [ "${{ github.event.inputs.publish_to_wechat }}" = "false" ]; then
+            PUBLISH_FLAG="--no-publish"
+          fi
+          python main.py $PUBLISH_FLAG
+
+      - name: Upload report artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: daily-report-${{ github.run_number }}
+          path: |
+            ai-daily-report/output/
+            ai-daily-report/logs/
+          retention-days: 30
+
+      - name: Commit output files
+        if: success()
+        run: |
+          cd ai-daily-report
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add output/ data/ logs/
+          git diff --staged --quiet || git commit -m "📰 Daily report $(date +%Y-%m-%d)"
+          git push

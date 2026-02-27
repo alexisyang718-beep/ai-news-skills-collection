@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+feeds/follow.opml
+.env
+
+# archive 体积大且每小时变动，不提交到 Git
+# daily-report 和 deep-column 只需要 latest-24h.json
+data/archive.json
+data/source-status.json
